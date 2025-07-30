@@ -1,0 +1,155 @@
+definitions:
+  handler.AddFileRequest:
+    properties:
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  response.FileErrorDTO:
+    properties:
+      reason:
+        type: string
+      url:
+        type: string
+    type: object
+  response.FileInfoDTO:
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+      url:
+        type: string
+    type: object
+  response.TaskStatusResponse:
+    properties:
+      archive_url:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/response.FileErrorDTO'
+        type: array
+      files:
+        items:
+          $ref: '#/definitions/response.FileInfoDTO'
+        type: array
+      id:
+        type: string
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Task Service
+paths:
+  /archive/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: ZIP архив
+          schema:
+            type: file
+        "404":
+          description: Задача или архив не найдены
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Скачать архив задачи
+      tags:
+      - tasks
+  /tasks:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID задачи
+          schema:
+            type: string
+        "429":
+          description: достигнут лимит активных задач
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Создать новую задачу
+      tags:
+      - tasks
+  /tasks/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.TaskStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить статус задачи
+      tags:
+      - tasks
+  /tasks/{id}/files:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ссылка на файл
+        in: body
+        name: file
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AddFileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статус задачи
+          schema:
+            $ref: '#/definitions/response.TaskStatusResponse'
+        "400":
+          description: Некорректный формат запроса
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Задача не найдена
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Недопустимое расширение файла
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Добавить файл в задачу
+      tags:
+      - tasks
+swagger: "2.0"
